@@ -15,8 +15,8 @@ void MyWindow_destroy(MyWindow *window)
     return;
 
   SDL_DestroyRenderer(window->renderer);
-  SDL_DestroyWindow(window->window);
-
   window->renderer = NULL;
+  
+  SDL_DestroyWindow(window->window);
   window->window = NULL;
 }

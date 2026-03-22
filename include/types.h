@@ -5,8 +5,10 @@
 
 enum constants
 {
-  DEFAULT_WINDOW_WIDTH = 640,
-  DEFAULT_WINDOW_HEIGHT = 480,
+  DEFAULT_IMAGE_WINDOW_WIDTH = 640,
+  DEFAULT_IMAGE_WINDOW_HEIGHT = 480,
+  DEFAULT_APP_WINDOW_WIDTH = 640,
+  DEFAULT_APP_WINDOW_HEIGHT = 480,
 };
 
 typedef struct
@@ -21,5 +23,12 @@ typedef struct
   SDL_Texture *texture;
   SDL_FRect rect;
 } MyImage;
+
+typedef struct {
+  SDL_FRect rect;
+  SDL_Color color;
+  const char* label;
+  bool is_pressed;
+} Button;
 
 #endif
