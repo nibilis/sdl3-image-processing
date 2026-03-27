@@ -2,6 +2,8 @@
 #include <SDL3_image/SDL_image.h>
 #include <SDL3/SDL.h>
 
+#include <unistd.h> // [TODO] remove - debbuging only
+
 void MyImage_destroy(MyImage *image)
 {
   if (!image)
@@ -80,19 +82,16 @@ void load_rgba32(const char *filename, SDL_Renderer *renderer, MyImage *output_i
     return;
   }
 
+  SDL_Log(">>> SDL_GetTextureSize");
   SDL_GetTextureSize(output_image->texture, &output_image->rect.w, &output_image->rect.h);
+  SDL_Log("<<< SDL_GetTextureSize");
+  SDL_Log("<<< load_rgba32(\"%s\")", filename);
 }
 
 bool is_greyscale(SDL_Surface *surface)
 {
   SDL_Log(">>> is_greyscale()");
 
-  if (!surface)
-  {
-    SDL_Log("\t*** Erro: Superfície inválida (surface == NULL).");
-    SDL_Log("<<< is_greyscale()");
-    return false;
-  }
   if (!surface)
   {
     SDL_Log("\t*** Erro: Superfície inválida (surface == NULL).");

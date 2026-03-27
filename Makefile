@@ -24,7 +24,7 @@ all: $(TARGET)
 
 # Linkagem final
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
+	$(CC) $(OBJ) -g -o $(TARGET) $(LDFLAGS)
 
 # Compilação dos objetos
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
