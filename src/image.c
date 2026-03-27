@@ -2,8 +2,6 @@
 #include <SDL3_image/SDL_image.h>
 #include <SDL3/SDL.h>
 
-#include <unistd.h> // [TODO] remove - debbuging only
-
 void MyImage_destroy(MyImage *image)
 {
   if (!image)
@@ -24,26 +22,26 @@ void MyImage_destroy(MyImage *image)
 
 void load_rgba32(const char *filename, SDL_Renderer *renderer, MyImage *output_image)
 {
-  SDL_Log(">>> load_rgba32(\"%s\")", filename);
+  // SDL_Log(">>> load_rgba32(\"%s\")", filename);
 
   if (!filename)
   {
     SDL_Log("\t*** Erro: Nome do arquivo inválido (filename == NULL).");
-    SDL_Log("<<< load_rgba32(\"%s\")", filename);
+    // SDL_Log("<<< load_rgba32(\"%s\")", filename);
     return;
   }
 
   if (!renderer)
   {
     SDL_Log("\t*** Erro: Renderer inválido (renderer == NULL).");
-    SDL_Log("<<< load_rgba32(\"%s\")", filename);
+    // SDL_Log("<<< load_rgba32(\"%s\")", filename);
     return;
   }
 
   if (!output_image)
   {
     SDL_Log("\t*** Erro: Imagem de saída inválida (output_image == NULL).");
-    SDL_Log("<<< load_rgba32(\"%s\")", filename);
+    // SDL_Log("<<< load_rgba32(\"%s\")", filename);
     return;
   }
 
@@ -54,7 +52,7 @@ void load_rgba32(const char *filename, SDL_Renderer *renderer, MyImage *output_i
   if (!surface)
   {
     SDL_Log("\t*** Erro ao carregar a imagem: %s", SDL_GetError());
-    SDL_Log("<<< load_rgba32(\"%s\")", filename);
+    // SDL_Log("<<< load_rgba32(\"%s\")", filename);
     return;
   }
 
@@ -64,7 +62,7 @@ void load_rgba32(const char *filename, SDL_Renderer *renderer, MyImage *output_i
   if (!output_image->surface)
   {
     SDL_Log("\t*** Erro ao converter superfície para formato RGBA32: %s", SDL_GetError());
-    SDL_Log("<<< load_rgba32(\"%s\")", filename);
+    // SDL_Log("<<< load_rgba32(\"%s\")", filename);
     return;
   }
 
@@ -78,24 +76,24 @@ void load_rgba32(const char *filename, SDL_Renderer *renderer, MyImage *output_i
   if (!output_image->texture)
   {
     SDL_Log("\t*** Erro ao criar textura: %s", SDL_GetError());
-    SDL_Log("<<< load_rgba32(\"%s\")", filename);
+    // SDL_Log("<<< load_rgba32(\"%s\")", filename);
     return;
   }
 
-  SDL_Log(">>> SDL_GetTextureSize");
+  // SDL_Log(">>> SDL_GetTextureSize");
   SDL_GetTextureSize(output_image->texture, &output_image->rect.w, &output_image->rect.h);
-  SDL_Log("<<< SDL_GetTextureSize");
-  SDL_Log("<<< load_rgba32(\"%s\")", filename);
+  // SDL_Log("<<< SDL_GetTextureSize");
+  // SDL_Log("<<< load_rgba32(\"%s\")", filename);
 }
 
 bool is_greyscale(SDL_Surface *surface)
 {
-  SDL_Log(">>> is_greyscale()");
+  // SDL_Log(">>> is_greyscale()");
 
   if (!surface)
   {
     SDL_Log("\t*** Erro: Superfície inválida (surface == NULL).");
-    SDL_Log("<<< is_greyscale()");
+    // SDL_Log("<<< is_greyscale()");
     return false;
   }
 
@@ -115,31 +113,33 @@ bool is_greyscale(SDL_Surface *surface)
     if (r != g || r != b)
     {
       SDL_Log("\tImagem não é em tons de cinza.");
-      SDL_Log("<<< is_greyscale()");
+      // SDL_Log("<<< is_greyscale()");
       return false;
     }
   }
 
   SDL_Log("\tImagem é em tons de cinza.");
-  SDL_Log("<<< is_greyscale()");
+  // ("<<< is_greyscale()");
   return true;
 }
 
 void to_greyscale(SDL_Renderer *renderer, MyImage *image)
 {
-  SDL_Log(">>> to_greyscale()");
+  // SDL_Log(">>> to_greyscale()");
+
+  SDL_Log("\tAplicando Greyscale");
 
   if (!renderer)
   {
     SDL_Log("\t*** Erro: Renderer inválido (renderer == NULL).");
-    SDL_Log("<<< to_greyscale()");
+    // SDL_Log("<<< to_greyscale()");
     return;
   }
 
   if (!image || !image->surface)
   {
     SDL_Log("\t*** Erro: Imagem inválida (image == NULL ou image->surface == NULL).");
-    SDL_Log("<<< to_greyscale()");
+    // SDL_Log("<<< to_greyscale()");
     return;
   }
 
@@ -166,5 +166,7 @@ void to_greyscale(SDL_Renderer *renderer, MyImage *image)
 
   SDL_UnlockSurface(image->surface);
 
-  SDL_Log("<<< to_greyscale()");
+  SDL_Log("\tImagem é em tons de cinza.");
+
+  // SDL_Log("<<< to_greyscale()");
 }

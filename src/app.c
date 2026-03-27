@@ -13,9 +13,15 @@ static MyWindow app_window = {0};
 static MyImage g_image = {0};
 
 static float histogram[256] = {0};
+static bool equalized = false;
+static int CDFValues[256];
+static float equalizedHistogram[256] = {0};
 
 Button btnEqualize = {{50, 300, 150, 40}, {100, 100, 100, 255}, "Equalize", false};
 Button btnClose = {{220, 300, 100, 40}, {150, 50, 50, 255}, "Close", false};
+Button btnSave = {{390, 300, 100, 40}, {50, 50, 200, 255}, "Save", false};
+
+static SDL_Surface *original_grayscale_surface = NULL;
 
 SDL_AppResult initialize(const char *image_filename)
 {
@@ -26,7 +32,8 @@ SDL_AppResult initialize(const char *image_filename)
   }
 
   initialize_image(image_filename);
-  SDL_Log("### image initialized ###");
+  original_grayscale_surface = SDL_DuplicateSurface(g_image.surface);
+  // SDL_Log("### image initialized ###");
   
   
   initialize_app();
@@ -37,18 +44,18 @@ SDL_AppResult initialize(const char *image_filename)
 
 void shutdown(void)
 {
-  SDL_Log(">>> shutdown()");
+  // SDL_Log(">>> shutdown()");
 
   MyImage_destroy(&g_image);
-   SDL_Log("Image Destroyed");
+   // SDL_Log("Image Destroyed");
   MyWindow_destroy(&image_window);
-   SDL_Log("image window Destroyed");
+   // SDL_Log("image window Destroyed");
   MyWindow_destroy(&app_window);
-   SDL_Log("app window destroyed");
+   // SDL_Log("app window destroyed");
 
   SDL_Quit();
 
-  SDL_Log("<<< shutdown()");
+  // SDL_Log("<<< shutdown()");
 }
 
 void render(void)
@@ -121,15 +128,28 @@ SDL_AppResult initialize_app(void)
   // Normalizacao do histograma
     for(int i = 0; i < 256; i++){
     histogram[i] = (histogram[i] / pixelCount);
-    SDL_Log("%f", histogram[i]);
   }
 
- 
+  SDL_UnlockSurface(g_image.surface);
 
 
 
   return SDL_APP_CONTINUE;
 
+}
+
+void save_image()
+{
+  const char *filename = "output_image.png";
+
+  bool saved = SDL_SavePNG(g_image.surface, filename);
+
+  if (!saved)
+  {
+    SDL_Log("Erro ao salvar a imagem");
+  }
+
+  SDL_Log("Imagem salva em %s", filename);
 }
 
 void drawHistogram(float histogram[256]){
@@ -141,6 +161,10 @@ void drawHistogram(float histogram[256]){
 
   int width = DEFAULT_APP_WINDOW_WIDTH;
   int height = DEFAULT_APP_WINDOW_HEIGHT;
+
+  if (max == 0){
+    return;
+  }
 
   for (int i = 0; i < 256; i++) {
     int x = (i * width) / 256;
@@ -158,29 +182,64 @@ void drawHistogram(float histogram[256]){
 }
 
 void equalizeHistogram(float histogram[256]){
-  int CDFValues[256]; // (primeira parte do processo de equalizacao - Valores arredondados)
   // funcao transformacao
   float value = 0.0f;
   for (int i = 0; i < 256; i++){
     value += histogram[i];
-    CDFValues[i] = (int)(255 * value *0.5f); // arredonda pra cima
-    if (CDFValues[i] > 255) {CDFValues[i] = 255;}
+    int s = (int)(255.0f * value + 0.5f); // arredonda pra cima
+    if (s > 255) {s = 255;}
+    CDFValues[i] = s;
   }
 
-  float histogram_equalized[256] = {0};
+  for (int i = 0; i < 256; i++){
+    equalizedHistogram[i] = 0.0f;
+  }
+
   for(int i = 0 ; i < 256; i++){
     int new_val = CDFValues[i];
-    histogram_equalized[new_val] += histogram[i];
+    equalizedHistogram[new_val] += histogram[i];
+  }
+ 
+}
+
+void applyEqualization(){
+  SDL_LockSurface(g_image.surface);
+
+  const SDL_PixelFormatDetails *format = SDL_GetPixelFormatDetails(g_image.surface->format);
+
+  const SDL_Palette *palette = SDL_GetSurfacePalette(g_image.surface);
+
+  Uint32 *pixels = (Uint32 *)g_image.surface->pixels;
+
+  int total = g_image.surface->w * g_image.surface->h;
+
+  for(int i = 0; i < total; i++){
+    Uint8 r,g,b,a;
+
+    SDL_GetRGBA(pixels[i], format, palette, &r, &g, &b, &a);
+
+    Uint8 newGray = CDFValues[r];
+
+    pixels[i] = SDL_MapRGBA(format, palette, newGray, newGray, newGray, a);
   }
 
-  histogram = histogram_equalized;
-  
+  SDL_UnlockSurface(g_image.surface);
+
+  SDL_UpdateTexture(g_image.texture, NULL, g_image.surface->pixels, g_image.surface->pitch);
+
+}
+
+void restoreOriginal(){
+  if(!original_grayscale_surface) return;
+
+  SDL_BlitSurface(original_grayscale_surface, NULL, g_image.surface, NULL);
+
+  SDL_UpdateTexture(g_image.texture, NULL, g_image.surface->pixels, g_image.surface->pitch);
+
 }
 
 void loop(void)
 {
-  SDL_Log(">>> loop()");
-
   bool mustRefresh = false;
   render();
  
@@ -195,8 +254,17 @@ void loop(void)
 
     draw_button(app_window.renderer, btnEqualize);
     draw_button(app_window.renderer, btnClose);
+    draw_button(app_window.renderer, btnSave);
 
-    drawHistogram(histogram);
+    if(equalized){
+      drawHistogram(equalizedHistogram);
+      btnEqualize.label = "Normalize";
+    } else{
+      drawHistogram(histogram);
+      btnEqualize.label = "Equalize";
+    }
+
+    
 
     SDL_RenderPresent(app_window.renderer);
 
@@ -215,12 +283,30 @@ void loop(void)
         }
 
         if (is_point_in_rect(mouseX, mouseY, btnEqualize.rect) && mousepressed) {
-          equalizeHistogram(histogram);
-          SDL_Log("Equalizing Histogram...\n");
+          if(!equalized){
+            SDL_Log("Equalizando histograma...\n");
+            equalizeHistogram(histogram);
+            SDL_Log("Histograma equalizado\n");
+            SDL_Log("Aplicando equalização à imagem...");
+            applyEqualization();
+            SDL_Log("Imagem equalizada\n");
+            render();
+          } else{
+            SDL_Log("Revertendo a equalização da imagem...\n");
+            restoreOriginal();
+            render();
+            SDL_Log("Imagem grayscale original restaurada");
+          }
+          equalized = !equalized;
         }
 
         if (is_point_in_rect(mouseX, mouseY, btnClose.rect) && mousepressed) {
           isRunning = false; 
+        }
+
+        if (is_point_in_rect(mouseX, mouseY, btnSave.rect) && mousepressed) {
+          SDL_Log("Salvando imagem...\n");
+          save_image();
         }
       }
     }
@@ -232,5 +318,5 @@ void loop(void)
     }
   }
   
-  SDL_Log("<<< loop()");
+  // SDL_Log("<<< loop()");
 }
