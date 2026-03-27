@@ -157,7 +157,7 @@ void drawHistogram(float histogram[256]){
 
 }
 
-float* equalizeHistogram(float histogram[256]){
+void equalizeHistogram(float histogram[256]){
   int CDFValues[256]; // (primeira parte do processo de equalizacao - Valores arredondados)
   // funcao transformacao
   float value = 0.0f;
@@ -174,9 +174,6 @@ float* equalizeHistogram(float histogram[256]){
   }
 
   histogram = histogram_equalized;
-
-  float x[256] = {100};
-  return x;
   
 }
 
@@ -218,7 +215,7 @@ void loop(void)
         }
 
         if (is_point_in_rect(mouseX, mouseY, btnEqualize.rect) && mousepressed) {
-          histogram = equalizeHistogram(histogram);
+          equalizeHistogram(histogram);
           SDL_Log("Equalizing Histogram...\n");
         }
 
