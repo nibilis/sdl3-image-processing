@@ -4,6 +4,7 @@
 #include "types.h"
 #include "button.h"
 #include <SDL3/SDL.h>
+#include <math.h>
 
 static const char *IMAGE_WINDOW_TITLE = "Projeto 1 - Imagem";
 static const char *APP_WINDOW_TITLE = "Projeto 1 - App";
@@ -132,7 +133,7 @@ SDL_AppResult initialize_app(void)
 
   SDL_UnlockSurface(g_image.surface);
 
-
+  printImageInfo(histogram);
 
   return SDL_APP_CONTINUE;
 
@@ -199,7 +200,6 @@ void equalizeHistogram(float histogram[256]){
     int new_val = CDFValues[i];
     equalizedHistogram[new_val] += histogram[i];
   }
- 
 }
 
 void applyEqualization(){
@@ -236,6 +236,48 @@ void restoreOriginal(){
 
   SDL_UpdateTexture(g_image.texture, NULL, g_image.surface->pixels, g_image.surface->pitch);
 
+}
+
+float getMean(float histogram[256]){
+  float mean = 0.0f;
+
+  for (int i = 0; i < 256; i++){
+    mean += i * histogram[i];
+  }
+
+  return mean;
+}
+
+const char* classifyBrightness(float mean){
+    if(mean < 85) return "Escura";
+    else if(mean < 170) return "Media";
+    else return "Clara";
+}
+
+float computeStdDev(float hist[256], float mean){
+    float variance = 0.0f;
+
+    for(int i = 0; i < 256; i++){
+        float diff = i - mean;
+        variance += diff * diff * hist[i];
+    }
+
+    return sqrtf(variance);
+}
+
+const char* classifyContrast(float stddev){
+    if(stddev < 40) return "Baixo";
+    else if(stddev < 80) return "Medio";
+    else return "Alto";
+}
+
+void printImageInfo(float histogram[256]){
+    float mean = getMean(histogram);
+    float stddev = computeStdDev(histogram, mean);
+
+    SDL_Log("Brilho: %s (%.2f)", classifyBrightness(mean), mean);
+
+    SDL_Log("Contraste: %s (%.2f)", classifyContrast(stddev), stddev);
 }
 
 void loop(void)
@@ -291,11 +333,13 @@ void loop(void)
             applyEqualization();
             SDL_Log("Imagem equalizada\n");
             render();
+            printImageInfo(equalizedHistogram);
           } else{
             SDL_Log("Revertendo a equalização da imagem...\n");
             restoreOriginal();
             render();
             SDL_Log("Imagem grayscale original restaurada");
+            printImageInfo(histogram);
           }
           equalized = !equalized;
         }
